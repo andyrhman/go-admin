@@ -4,12 +4,10 @@ import (
 	"go-admin/db"
 	"go-admin/models"
 	"go-admin/utils"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func Register(c *fiber.Ctx) error {
@@ -101,12 +99,7 @@ func Login(c *fiber.Ctx) error {
 		cookieDuration = 24 * time.Hour // 1 day
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":  user.Id,
-		"exp": time.Now().Add(24 * time.Hour).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_ACCESS")))
+	tokenString, err := utils.GenerateJwt(user.Id.String())
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -129,25 +122,27 @@ func Login(c *fiber.Ctx) error {
 func User(c *fiber.Ctx) error {
 	cookie := c.Cookies("user_session")
 
-	token, err := jwt.ParseWithClaims(cookie, jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET_ACCESS")), nil
-	})
-
-	if err != nil || !token.Valid {
-		return c.Status(401).JSON(fiber.Map{
-			"message": "Unauthenticated",
-		})
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"message": "Could not parse claims"})
-	}
+	id, _ := utils.ParseJwt(cookie)
 
 	var user models.User
 
-	db.DB.Where("id = ?", claims["id"]).First(&user)
+	db.DB.Where("id = ?", id).First(&user)
 
 	return c.JSON(user)
+}
+
+func Logout(c *fiber.Ctx) error {
+	cookie := fiber.Cookie{
+		Name:     "user_session",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HTTPOnly: true,
+	}
+
+	c.Cookie(&cookie)
+
+	return c.JSON(fiber.Map{
+		"message": "success",
+	})
 }
 
