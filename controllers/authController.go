@@ -36,14 +36,14 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	hashedPassword := utils.HashPassword(data["password"])
-
 	user := &models.User{
 		FullName: data["fullName"],
 		Username: data["username"],
 		Email:    data["email"],
-		Password: []byte(hashedPassword),
+		RoleId:   1,
 	}
+
+	user.SetPassword(data["password"])
 
 	db.DB.Create(&user)
 
@@ -86,7 +86,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	if !utils.VerifyPassword(string(user.Password), req.Password) {
+	if !user.ComparePassword(req.Password) {
 		return c.Status(400).JSON(fiber.Map{
 			"message": "Invalid credentials!",
 		})
@@ -145,4 +145,3 @@ func Logout(c *fiber.Ctx) error {
 		"message": "success",
 	})
 }
-
