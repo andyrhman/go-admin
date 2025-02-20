@@ -16,18 +16,42 @@ func AllRoles(c *fiber.Ctx) error {
 	return c.JSON(roles)
 }
 
-func CreateRole(c *fiber.Ctx) error {
-	var role models.Role
+type CreateRoleRequest struct {
+	Name        string `json:"name" validate:"required"`
+	Permissions []uint `json:"permissions" validate:"required,dive,gt=0"`
+}
 
-	if err := c.BodyParser(&role); err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Invalid request body",
+func CreateRole(c *fiber.Ctx) error {
+	var req CreateRoleRequest
+
+	// Parse the request body
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cannot parse JSON",
 		})
 	}
 
-	db.DB.Create(&role)
+	// Create a Role instance with the provided name.
+	role := models.Role{
+		Name: req.Name,
+	}
 
-	return c.JSON(role)
+	// Map the permission IDs to Permission structs.
+	for _, permID := range req.Permissions {
+		role.Permissions = append(role.Permissions, models.Permission{
+			Id: permID,
+		})
+	}
+
+	// Save the new role to the database using GORM.
+	if err := db.DB.Create(&role).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to create role",
+		})
+	}
+
+	// Return the created role with status 201.
+	return c.Status(fiber.StatusCreated).JSON(role)
 }
 
 func GetRole(c *fiber.Ctx) error {
@@ -49,6 +73,11 @@ func GetRole(c *fiber.Ctx) error {
 	return c.JSON(roles)
 }
 
+type UpdateRoleRequest struct {
+	Name        string `json:"name" validate:"required"`
+	Permissions []uint `json:"permissions" validate:"required,dive,gt=0"`
+}
+
 func UpdateRole(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -57,20 +86,34 @@ func UpdateRole(c *fiber.Ctx) error {
 		})
 	}
 
-	var role models.Role
-	if err := c.BodyParser(&role); err != nil {
+	var req UpdateRoleRequest
+
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Cannot parse request body",
 		})
 	}
 
-	if err := db.DB.Where("id = ?", id).Updates(&role).Error; err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot update role",
-		})
+	// Fetch the existing role.
+	var role models.Role
+	if err := db.DB.Preload("Permissions").First(&role, id).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
 	}
 
-	db.DB.Where("id = ?", id).First(&role)
+	// Update the role's basic field.
+	role.Name = req.Name
+	if err := db.DB.Model(&role).Update("name", req.Name).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update role name"})
+	}
+
+	var newPermissions []models.Permission
+	for _, permID := range req.Permissions {
+		newPermissions = append(newPermissions, models.Permission{Id: permID})
+	}
+
+	if err := db.DB.Model(&role).Association("Permissions").Replace(newPermissions); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update permissions"})
+	}
 
 	return c.JSON(role)
 }
