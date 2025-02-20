@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/argon2"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -60,4 +61,19 @@ func (user *User) ComparePassword(inputPassword string) bool {
 
 	// Compare the computed hash with the stored hash
 	return base64.StdEncoding.EncodeToString(newHash) == encodedStoredHash
+}
+
+func (users *User) Count(db *gorm.DB) int64 {
+	var total int64
+	db.Model(&User{}).Count(&total)
+
+	return total
+}
+
+func (user *User) Take(db *gorm.DB, limit int, offset int) interface{} {
+	var users []User
+
+	db.Preload("Role").Offset(offset).Limit(limit).Find(&users)
+
+	return users
 }

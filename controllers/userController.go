@@ -11,7 +11,7 @@ import (
 
 func AllUsers(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit := 2
+	limit := 5
 	offset := (page - 1) * limit
 
 	var total int64
