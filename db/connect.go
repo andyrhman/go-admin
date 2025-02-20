@@ -33,7 +33,7 @@ func Connect() {
 		log.Fatal("Failed to connect to the database:", err)
 	}
 
-	db.AutoMigrate(&models.User{}, &models.Role{}, &models.Permission{}, &models.Product{})
+	db.AutoMigrate(&models.User{}, &models.Role{}, &models.Permission{}, &models.Product{}, &models.Order{}, &models.OrderItem{})
 
 	log.Println("Connected to the database successfully!")
 }

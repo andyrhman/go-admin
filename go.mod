@@ -6,6 +6,7 @@ require github.com/gofiber/fiber/v2 v2.52.6
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
+	github.com/brianvoe/gofakeit/v7 v7.2.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4 // indirect
 	github.com/gofiber/schema v1.3.0 // indirect

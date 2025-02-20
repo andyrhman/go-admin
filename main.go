@@ -11,6 +11,8 @@ import (
 func main() {
 	db.Connect()
 
+	// db.SeedFakeOrders() * call the seed function
+
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{

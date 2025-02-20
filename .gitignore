@@ -9,6 +9,8 @@
 /bin
 /dist
 /debug
+uploads/*
+!uploads/.gitkeep 
 
 # Test binaries and coverage files
 *.test
