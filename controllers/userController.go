@@ -3,17 +3,33 @@ package controllers
 import (
 	"go-admin/db"
 	"go-admin/models"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
 
 func AllUsers(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit := 2
+	offset := (page - 1) * limit
+
+	var total int64
+
 	var users []models.User
 
-	db.DB.Preload("Role").Find(&users)
+	db.DB.Preload("Role").Offset(offset).Limit(limit).Find(&users)
 
-	return c.JSON(users)
+	db.DB.Model(&models.User{}).Count(&total)
+
+	return c.JSON(fiber.Map{
+		"data": users,
+		"meta": fiber.Map{
+			"total": total,
+			"page": page,
+			"last_page": (total + int64(limit) - 1) / int64(limit),
+		},
+	})
 }
 
 func CreateUser(c *fiber.Ctx) error {

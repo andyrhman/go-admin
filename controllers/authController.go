@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 func Register(c *fiber.Ctx) error {
@@ -144,4 +145,88 @@ func Logout(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "success",
 	})
+}
+
+func UpdateInfo(c *fiber.Ctx) error {
+	cookie := c.Cookies("user_session")
+
+	id, _ := utils.ParseJwt(cookie)
+
+	// * store the data parsed from the request body
+	var input models.User
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cannot parse request body",
+		})
+	}
+
+	// * store the existing user data fetched from the database
+	var existingUser models.User
+
+	db.DB.Where("id = ?", id).First(&existingUser)
+
+	if input.FullName != "" {
+		existingUser.FullName = input.FullName
+	}
+
+	if input.Email != "" && input.Email != existingUser.Email {
+		var existingUserByEmail models.User
+		if err := db.DB.Where("email = ?", input.Email).First(&existingUserByEmail).Error; err == nil {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"message": "Email already exists",
+			})
+		}
+		existingUser.Email = input.Email
+	}
+
+	if input.Username != "" && input.Username != existingUser.Username {
+		var existingUserByUsername models.User
+		if err := db.DB.Where("username = ?", input.Username).First(&existingUserByUsername).Error; err == nil {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"message": "Username already exists",
+			})
+		}
+		existingUser.Username = input.Username
+	}
+
+	db.DB.Save(&existingUser)
+
+	return c.JSON(existingUser)
+}
+
+func UpdatePassword(c *fiber.Ctx) error {
+	cookie := c.Cookies("user_session")
+
+	id, _ := utils.ParseJwt(cookie)
+
+	uid, _ := uuid.Parse(id)
+
+	var req map[string]string
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cannot parse request body",
+		})
+	}
+
+	if req["password"] != req["password_confirm"] {
+		c.Status(400)
+		return c.JSON(fiber.Map{
+			"message": "Passwords do not match!",
+		})
+	}
+
+	user := models.User{
+		Id: uid,
+	}
+
+	user.SetPassword(req["password"])
+
+	if err := db.DB.Model(&user).Updates(user).Error; err != nil {
+		return c.JSON(fiber.Map{
+			"message": "Cannot update password!",
+		})
+	}
+
+	return c.JSON(user)
 }
