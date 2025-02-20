@@ -11,25 +11,8 @@ import (
 
 func AllUsers(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit := 5
-	offset := (page - 1) * limit
 
-	var total int64
-
-	var users []models.User
-
-	db.DB.Preload("Role").Offset(offset).Limit(limit).Find(&users)
-
-	db.DB.Model(&models.User{}).Count(&total)
-
-	return c.JSON(fiber.Map{
-		"data": users,
-		"meta": fiber.Map{
-			"total": total,
-			"page": page,
-			"last_page": (total + int64(limit) - 1) / int64(limit),
-		},
-	})
+	return c.JSON(models.Paginate(db.DB, &models.User{}, page))
 }
 
 func CreateUser(c *fiber.Ctx) error {
@@ -117,14 +100,14 @@ func UpdateUser(c *fiber.Ctx) error {
 	}
 
 	if input.RoleId != 0 {
-        var role models.Role
-        if err := db.DB.Where("id = ?", input.RoleId).First(&role).Error; err != nil {
-            return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-                "message": "Role not found",
-            })
-        }
-        existingUser.RoleId = input.RoleId
-    }
+		var role models.Role
+		if err := db.DB.Where("id = ?", input.RoleId).First(&role).Error; err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "Role not found",
+			})
+		}
+		existingUser.RoleId = input.RoleId
+	}
 
 	db.DB.Save(&existingUser)
 

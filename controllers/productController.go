@@ -11,25 +11,8 @@ import (
 
 func AllProducts(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit := 5
-	offset := (page - 1) * limit
 
-	var total int64
-
-	var products []models.Product
-
-	db.DB.Offset(offset).Limit(limit).Find(&products)
-
-	db.DB.Model(&models.User{}).Count(&total)
-
-	return c.JSON(fiber.Map{
-		"data": products,
-		"meta": fiber.Map{
-			"total":     total,
-			"page":      page,
-			"last_page": (total + int64(limit) - 1) / int64(limit),
-		},
-	})
+	return c.JSON(models.Paginate(db.DB, &models.Product{}, page))
 }
 
 func CreateProduct(c *fiber.Ctx) error {
