@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"go-admin/db"
+	"go-admin/middlewares"
 	"go-admin/models"
 	"strconv"
 
@@ -9,6 +10,12 @@ import (
 )
 
 func AllRoles(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "roles"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
 	var roles []models.Role
 
 	db.DB.Find(&roles)
@@ -22,6 +29,12 @@ type CreateRoleRequest struct {
 }
 
 func CreateRole(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "roles"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
 	var req CreateRoleRequest
 
 	// Parse the request body
@@ -55,6 +68,12 @@ func CreateRole(c *fiber.Ctx) error {
 }
 
 func GetRole(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "roles"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -79,6 +98,12 @@ type UpdateRoleRequest struct {
 }
 
 func UpdateRole(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "roles"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -119,6 +144,12 @@ func UpdateRole(c *fiber.Ctx) error {
 }
 
 func DeleteRole(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "roles"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+	
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

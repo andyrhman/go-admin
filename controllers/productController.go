@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"go-admin/db"
+	"go-admin/middlewares"
 	"go-admin/models"
 	"strconv"
 
@@ -10,12 +11,24 @@ import (
 )
 
 func AllProducts(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "products"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+	
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 
 	return c.JSON(models.Paginate(db.DB, &models.Product{}, page))
 }
 
 func CreateProduct(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "products"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+	
 	var product models.Product
 
 	if err := c.BodyParser(&product); err != nil {
@@ -30,6 +43,12 @@ func CreateProduct(c *fiber.Ctx) error {
 }
 
 func GetProduct(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "products"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
 	id := c.Params("id")
 
 	uid, err := uuid.Parse(id)
@@ -49,6 +68,12 @@ func GetProduct(c *fiber.Ctx) error {
 }
 
 func UpdateProduct(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "products"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
 	id := c.Params("id")
 
 	uid, err := uuid.Parse(id)
@@ -75,6 +100,12 @@ func UpdateProduct(c *fiber.Ctx) error {
 }
 
 func DeleteProduct(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "products"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+	
 	id := c.Params("id")
 
 	uid, err := uuid.Parse(id)

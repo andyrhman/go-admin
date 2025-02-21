@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/csv"
 	"go-admin/db"
+	"go-admin/middlewares"
 	"go-admin/models"
 	"os"
 	"strconv"
@@ -12,12 +13,24 @@ import (
 )
 
 func AllOrders(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "orders"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+	
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 
 	return c.JSON(models.Paginate(db.DB, &models.Order{}, page))
 }
 
 func Export(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "orders"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
 	filePath := "./csv/orders.csv"
 
 	if err := CreateFile(filePath); err != nil {
@@ -89,6 +102,12 @@ type Sales struct {
 }
 
 func Chart(c *fiber.Ctx) error {
+	if err := middlewares.IsAuthorized(c, "orders"); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+	
 	var sales []Sales
 
 	db.DB.Raw(`
