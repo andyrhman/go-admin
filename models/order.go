@@ -12,6 +12,7 @@ type Order struct {
 	UpdatedAt  string      `json:"updated_at"`
 	CreatedAt  string      `json:"created_at"`
 	OrderItems []OrderItem `json:"order_items" gorm:"foreignKey:OrderId"`
+	Total      float32     `json:"total" gorm:"-"`
 }
 
 type OrderItem struct {
@@ -22,7 +23,7 @@ type OrderItem struct {
 	Quantity     uint      `json:"quantity"`
 }
 
-func (order *Order) Count(db *gorm.DB) int64  {
+func (order *Order) Count(db *gorm.DB) int64 {
 	var total int64
 	db.Model(&Order{}).Count(&total)
 
@@ -33,6 +34,16 @@ func (order *Order) Take(db *gorm.DB, limit int, offset int) interface{} {
 	var orders []Order
 
 	db.Preload("OrderItems").Offset(offset).Limit(limit).Find(&orders)
+
+	for i := range orders {
+		var total float32 = 0
+
+		for _, orderItem := range orders[i].OrderItems {
+			total += orderItem.Price * float32(orderItem.Quantity)
+		}
+
+		orders[i].Total = total
+	}
 
 	return orders
 }
