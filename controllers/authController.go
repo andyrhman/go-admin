@@ -125,9 +125,17 @@ func User(c *fiber.Ctx) error {
 
 	id, _ := utils.ParseJwt(cookie)
 
-	var user models.User
+	uid, _ := uuid.Parse(id)
 
-	db.DB.Where("id = ?", id).First(&user)
+	user := models.User{
+		Id: uid,
+	}
+
+	if err := db.DB.Model(&user).Preload("Role").Preload("Role.Permissions").Find(&user).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Database error",
+		})
+	}
 
 	return c.JSON(user)
 }

@@ -63,7 +63,7 @@ func GetRole(c *fiber.Ctx) error {
 	}
 
 	var roles models.Role
-	
+
 	if err := db.DB.Where("id = ?", id).First(&roles).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Error not found",
@@ -126,7 +126,17 @@ func DeleteRole(c *fiber.Ctx) error {
 		})
 	}
 
-	db.DB.Where("id = ?", id).Delete(&models.Role{})
+	role := models.Role{
+		Id: uint(id),
+	}
+	
+	if err := db.DB.Model(&role).Association("Permissions").Clear(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to clear role permissions",
+		})
+	}
+
+	db.DB.Model(&role).Delete(role)
 
 	return c.SendStatus(fiber.StatusNoContent)
 }
