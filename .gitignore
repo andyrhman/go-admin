@@ -11,6 +11,8 @@
 /debug
 uploads/*
 !uploads/.gitkeep 
+csv/*
+!csv/.gitkeep 
 
 # Test binaries and coverage files
 *.test

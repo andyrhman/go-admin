@@ -35,14 +35,14 @@ func (order *Order) Take(db *gorm.DB, limit int, offset int) interface{} {
 
 	db.Preload("OrderItems").Offset(offset).Limit(limit).Find(&orders)
 
-	for i := range orders {
+	for order := range orders {
 		var total float32 = 0
 
-		for _, orderItem := range orders[i].OrderItems {
+		for _, orderItem := range orders[order].OrderItems {
 			total += orderItem.Price * float32(orderItem.Quantity)
 		}
 
-		orders[i].Total = total
+		orders[order].Total = total
 	}
 
 	return orders
